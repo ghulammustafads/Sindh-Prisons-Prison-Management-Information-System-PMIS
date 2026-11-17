@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "_Layout";
+    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+    var assignedController = RoleConstants.GetAssignedController(userRole) ?? "Account";
+    var assignedAction = string.IsNullOrEmpty(userRole) ? "Login" : "Index";
+}
+
+<div class="login-page-container">
+    <div class="login-card" style="text-align: center;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        </div>
+        <h2 class="login-form-heading" style="margin-bottom: 8px;">Access Denied</h2>
+        <p style="color: var(--pmis-navy-sub); font-size: 14px; margin-bottom: 24px;">
+            You do not have administrative authorization to view this page. System policy restricts accounts to their single designated role page.
+        </p>
+        <a asp-controller="@assignedController" asp-action="@assignedAction" class="btn-green-submit" style="text-decoration: none;">
+            Return to Authorized Workspace
+        </a>
+    </div>
+</div>

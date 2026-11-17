@@ -1,0 +1,6 @@
+{
+  "name": "Sindh Prisons - Prison Management Information System",
+  "description": "Production-grade ASP.NET Core MVC Prison Management Information System with SQL Server EF Core integration, role-based security, and custom styling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

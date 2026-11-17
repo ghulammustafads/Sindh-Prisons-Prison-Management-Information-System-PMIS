@@ -1,0 +1,78 @@
+# ==============================================================================
+# Sindh Prisons - Prison Management Information System (PMIS)
+# System Requirements, Frameworks, Libraries & Local Setup Specifications
+# ==============================================================================
+
+# 1. CORE APPLICATION RUNTIME & FRAMEWORK
+# ------------------------------------------------------------------------------
+# .NET 8.0 SDK (LTS) or higher is required to build and run the application.
+# Download from: https://dotnet.microsoft.com/download/dotnet/8.0
+framework: .NET 8.0 (net8.0)
+sdk_version: 8.0.400+
+application_type: ASP.NET Core Web Application (Model-View-Controller / Razor Views)
+language: C# 12.0
+operating_system: Windows 10/11, Windows Server 2019/2022, Ubuntu 22.04+, or macOS 12+
+
+# 2. DATABASE SYSTEM REQUIREMENTS
+# ------------------------------------------------------------------------------
+# Microsoft SQL Server (Local instance or SQLEXPRESS)
+database_engine: Microsoft SQL Server 2019, 2022, or SQL Server Express
+default_instance: localhost\SQLEXPRESS
+target_database_name: PrisonManagementDB
+authentication_mode: Windows Authentication (Integrated Security=True) or SQL Authentication
+default_connection_string: Server=localhost\SQLEXPRESS;Database=PrisonManagementDB;Integrated Security=True;TrustServerCertificate=True;Encrypt=True
+
+# 3. NUGET PACKAGES & LIBRARIES (C# / .NET)
+# ------------------------------------------------------------------------------
+# These packages are restored automatically via `dotnet restore` from PrisonManagementSystem.csproj:
+Microsoft.EntityFrameworkCore.SqlServer==8.0.10
+Microsoft.EntityFrameworkCore.Design==8.0.10
+Microsoft.Extensions.Identity.Core==8.0.10
+
+# Testing dependencies (contained in PrisonManagementSystem.Tests.csproj):
+Microsoft.NET.Test.Sdk==17.11.1
+xunit==2.9.2
+xunit.runner.visualstudio==2.8.2
+Microsoft.EntityFrameworkCore.InMemory==8.0.10
+
+# 4. FRONTEND & CLIENT-SIDE DEPENDENCIES
+# ------------------------------------------------------------------------------
+# Clean, self-contained architecture with ZERO external CDN or heavy npm bundle dependencies:
+# - Shared CSS: wwwroot/css/site.css (Design system matching Sindh Prisons specification)
+# - Vanilla JavaScript: wwwroot/js/site.js (Tab switching, password toggles, modal dialogs)
+# - Razor Views: Views/ (Server-side rendered Razor views and partials)
+
+# 5. ENVIRONMENT CONFIGURATION FILES
+# ------------------------------------------------------------------------------
+# - appsettings.json : Application logging and host settings
+# - appsettings.Database.json : SQL Server connection string (Isolated database config)
+
+# 6. LOCAL SETUP & EXECUTION COMMANDS
+# ------------------------------------------------------------------------------
+# Step 1: Verify .NET 8 SDK installation
+#   dotnet --version
+#   (Should output 8.0.x)
+#
+# Step 2: Configure database connection
+#   Ensure SQL Server (localhost\SQLEXPRESS) is running and database PrisonManagementDB exists.
+#   Edit `appsettings.Database.json` if using SQL Server Authentication (User ID & Password).
+#
+# Step 3: Restore dependencies and build
+#   dotnet restore
+#   dotnet build
+#
+# Step 4: Run unit tests
+#   dotnet test
+#
+# Step 5: Start the application
+#   dotnet run --project PrisonManagementSystem.csproj
+#   Default URL: http://localhost:5000 or https://localhost:5001
+#
+# 7. ROLE-TO-PAGE SYSTEM ACCOUNTS (FOR AUTHENTICATION)
+# ------------------------------------------------------------------------------
+# 1. Jail Superintendent     -> Dashboard          (Route: /Dashboard)
+# 2. Timetable Officer       -> Daily Timetable    (Route: /DailyTimetable)
+# 3. Gatekeeper              -> Gate Register      (Route: /GateRegister)
+# 4. Court Records Officer   -> Court Hearings     (Route: /CourtHearings)
+# 5. Prisoner Records Officer -> Prisoners         (Route: /Prisoners)
+# 6. System Administrator   -> Staff & Accounts   (Route: /StaffAccounts)

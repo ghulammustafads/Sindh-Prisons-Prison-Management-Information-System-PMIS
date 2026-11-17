@@ -1,0 +1,372 @@
+@model PrisonManagementSystem.ViewModels.StaffAccountsViewModel
+@{
+    ViewData["Title"] = "Staff & Accounts";
+    ViewData["ActivePage"] = "Staff & Accounts";
+    Layout = "_AuthenticatedLayout";
+}
+
+<div class="page-title-block">
+    <h2 class="page-title">Staff & Accounts</h2>
+    <p class="page-subtitle">Manage employees and role-based access</p>
+</div>
+
+<partial name="_Alerts" model="Model" />
+
+<div class="two-column-workspace">
+    <!-- Left: Staff, Roles, Accounts list card -->
+    <div class="pmis-card">
+        <!-- Internal Tabs -->
+        <div class="internal-tab-bar">
+            <a asp-action="Index" asp-route-tab="staff" class="internal-tab-btn @(Model.ActiveTab == "staff" ? "active" : "")">
+                Staff
+            </a>
+            <a asp-action="Index" asp-route-tab="roles" class="internal-tab-btn @(Model.ActiveTab == "roles" ? "active" : "")">
+                Roles
+            </a>
+            <a asp-action="Index" asp-route-tab="accounts" class="internal-tab-btn @(Model.ActiveTab == "accounts" ? "active" : "")">
+                Accounts
+            </a>
+        </div>
+
+        @if (Model.ActiveTab == "staff")
+        {
+            <!-- Search & Add Bar for Staff -->
+            <form method="get" asp-action="Index" class="table-filter-bar">
+                <input type="hidden" name="tab" value="staff" />
+                <div class="filter-left-group">
+                    <div class="search-input-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" name="search" value="@Model.SearchTerm" class="form-input" placeholder="Search staff" />
+                    </div>
+                    <button type="submit" class="btn-table-action">Filter</button>
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <a asp-action="Index" asp-route-tab="staff" class="btn-table-action" style="text-decoration:none;">Reset</a>
+                    }
+                </div>
+
+                <a href="#staffFormCard" class="btn-green-action">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Add staff</span>
+                </a>
+            </form>
+
+            @if (Model.StaffList.Count > 0)
+            {
+                <div class="pmis-table-wrapper">
+                    <table class="pmis-table">
+                        <thead>
+                            <tr>
+                                <th>Employee no.</th>
+                                <th>Name</th>
+                                <th>Official rank</th>
+                                <th>Role</th>
+                                <th>Barrack</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.StaffList)
+                            {
+                                <tr>
+                                    <td style="font-weight: 500;">@s.EmployeeNumber</td>
+                                    <td>@s.FullName</td>
+                                    <td>@s.OfficialRank</td>
+                                    <td>@s.RoleName</td>
+                                    <td>@(s.BarrackName ?? "Unassigned")</td>
+                                    <td>
+                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @(s.IsActive ? "#eaf5ee" : "#fee2e2"); color: @(s.IsActive ? "#0a5435" : "#b91c1c");">
+                                            @(s.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <form asp-action="ToggleStaffStatus" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="staffId" value="@s.StaffID" />
+                                            <button type="submit" class="btn-table-action">
+                                                @(s.IsActive ? "Disable" : "Enable")
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-container">
+                    <div class="empty-state-icon-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div class="empty-state-label">No staff records</div>
+                </div>
+            }
+        }
+        else if (Model.ActiveTab == "roles")
+        {
+            @if (Model.RolesList.Count > 0)
+            {
+                <div class="pmis-table-wrapper">
+                    <table class="pmis-table">
+                        <thead>
+                            <tr>
+                                <th>Role name</th>
+                                <th>Description</th>
+                                <th>Assigned staff</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.RolesList)
+                            {
+                                <tr>
+                                    <td style="font-weight: 600;">@r.RoleName</td>
+                                    <td>@(r.Description ?? "—")</td>
+                                    <td>@r.StaffCount</td>
+                                    <td>
+                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @(r.IsActive ? "#eaf5ee" : "#fee2e2"); color: @(r.IsActive ? "#0a5435" : "#b91c1c");">
+                                            @(r.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-container">
+                    <div class="empty-state-icon-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div class="empty-state-label">No roles found</div>
+                </div>
+            }
+        }
+        else
+        {
+            <!-- Accounts tab -->
+            @if (Model.AccountsList.Count > 0)
+            {
+                <div class="pmis-table-wrapper">
+                    <table class="pmis-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Staff member</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last login</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.AccountsList)
+                            {
+                                <tr>
+                                    <td style="font-weight: 600;">@a.Username</td>
+                                    <td>@a.StaffName (@a.EmployeeNumber)</td>
+                                    <td>@a.RoleName</td>
+                                    <td>
+                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @(a.IsActive ? "#eaf5ee" : "#fee2e2"); color: @(a.IsActive ? "#0a5435" : "#b91c1c");">
+                                            @(a.IsActive ? "Active" : "Disabled")
+                                        </span>
+                                    </td>
+                                    <td>@(a.LastLoginAtUtc.HasValue ? a.LastLoginAtUtc.Value.ToString("dd/MM/yyyy HH:mm") : "Never")</td>
+                                    <td>
+                                        <div style="display: flex; gap: 6px;">
+                                            <form asp-action="ToggleAccountStatus" method="post" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="accountId" value="@a.AccountID" />
+                                                <button type="submit" class="btn-table-action">
+                                                    @(a.IsActive ? "Disable" : "Enable")
+                                                </button>
+                                            </form>
+
+                                            <!-- Password Change trigger -->
+                                            <details style="position: relative;">
+                                                <summary class="btn-table-action" style="list-style:none; cursor:pointer;">Reset Pass</summary>
+                                                <div style="position: absolute; right: 0; z-index: 20; background: white; border: 1px solid var(--pmis-border); border-radius: 8px; padding: 16px; width: 260px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: 4px;">
+                                                    <form asp-action="ChangePassword" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="PasswordForm.AccountID" value="@a.AccountID" />
+                                                        <div class="form-group">
+                                                            <label class="form-label">New Password</label>
+                                                            <input type="password" name="PasswordForm.NewPassword" class="form-input" required minlength="6" />
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label class="form-label">Confirm Password</label>
+                                                            <input type="password" name="PasswordForm.ConfirmPassword" class="form-input" required minlength="6" />
+                                                        </div>
+                                                        <button type="submit" class="btn-green-submit" style="padding: 6px 12px; font-size: 13px;">Save</button>
+                                                    </form>
+                                                </div>
+                                            </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-container">
+                    <div class="empty-state-icon-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="empty-state-label">No accounts created</div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Right: Form card tailored to active tab -->
+    <div class="pmis-card" id="staffFormCard">
+        @if (Model.ActiveTab == "staff")
+        {
+            <div class="card-header-bar">
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--pmis-navy);">Add staff</h3>
+            </div>
+
+            <form asp-action="SaveStaff" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.FullName" class="form-label">Full name</label>
+                    <input asp-for="StaffForm.FullName" class="form-input" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.EmployeeNumber" class="form-label">Employee number</label>
+                    <input asp-for="StaffForm.EmployeeNumber" class="form-input" placeholder="e.g. SP-EMP-1042" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.OfficialRank" class="form-label">Official rank</label>
+                    <input asp-for="StaffForm.OfficialRank" class="form-input" placeholder="e.g. Deputy Superintendent / Head Warden / Clerk" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.RoleID" class="form-label">Role</label>
+                    <select asp-for="StaffForm.RoleID" class="form-select" required>
+                        <option value="">Select role</option>
+                        @foreach (var r in Model.AvailableRoles)
+                        {
+                            <option value="@r.RoleID">@r.RoleName</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.BarrackID" class="form-label">Assigned barrack <span class="optional">(optional)</span></label>
+                    <select asp-for="StaffForm.BarrackID" class="form-select">
+                        <option value="">Select barrack</option>
+                        @foreach (var b in Model.AvailableBarracks)
+                        {
+                            <option value="@b.BarrackID">@b.BarrackName (@b.Category)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.Phone" class="form-label">Phone</label>
+                    <input asp-for="StaffForm.Phone" class="form-input" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.JoiningDate" class="form-label">Joining date</label>
+                    <input asp-for="StaffForm.JoiningDate" type="date" class="form-input" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.DateOfBirth" class="form-label">Date of birth</label>
+                    <input asp-for="StaffForm.DateOfBirth" type="date" class="form-input" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.CNIC" class="form-label">CNIC</label>
+                    <input asp-for="StaffForm.CNIC" class="form-input" placeholder="42101-XXXXXXX-X" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffForm.Address" class="form-label">Address</label>
+                    <input asp-for="StaffForm.Address" class="form-input" required />
+                </div>
+
+                <button type="submit" class="btn-green-submit">
+                    Save staff
+                </button>
+            </form>
+        }
+        else if (Model.ActiveTab == "roles")
+        {
+            <div class="card-header-bar">
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--pmis-navy);">Add role</h3>
+            </div>
+
+            <form asp-action="SaveRole" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label asp-for="RoleForm.RoleName" class="form-label">Role name</label>
+                    <input asp-for="RoleForm.RoleName" class="form-input" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="RoleForm.Description" class="form-label">Description</label>
+                    <textarea asp-for="RoleForm.Description" class="form-textarea"></textarea>
+                </div>
+
+                <button type="submit" class="btn-green-submit">
+                    Save role
+                </button>
+            </form>
+        }
+        else
+        {
+            <div class="card-header-bar">
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--pmis-navy);">Create account</h3>
+            </div>
+
+            <form asp-action="SaveAccount" method="post" autocomplete="off">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label asp-for="AccountForm.StaffID" class="form-label">Staff member</label>
+                    <select asp-for="AccountForm.StaffID" class="form-select" required>
+                        <option value="">Select staff</option>
+                        @foreach (var s in Model.AvailableStaffWithoutAccounts)
+                        {
+                            <option value="@s.StaffID">@s.FullName (@s.EmployeeNumber)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AccountForm.Username" class="form-label">Username</label>
+                    <input asp-for="AccountForm.Username" class="form-input" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AccountForm.Password" class="form-label">Password</label>
+                    <input asp-for="AccountForm.Password" type="password" class="form-input" minlength="6" required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="AccountForm.ConfirmPassword" class="form-label">Confirm password</label>
+                    <input asp-for="AccountForm.ConfirmPassword" type="password" class="form-input" minlength="6" required />
+                </div>
+
+                <button type="submit" class="btn-green-submit">
+                    Save account
+                </button>
+            </form>
+        }
+    </div>
+</div>

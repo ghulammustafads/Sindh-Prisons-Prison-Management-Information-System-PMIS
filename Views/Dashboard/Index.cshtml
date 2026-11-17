@@ -1,0 +1,261 @@
+@model PrisonManagementSystem.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+    Layout = "_AuthenticatedLayout";
+}
+
+<div class="page-title-block">
+    <h2 class="page-title">Dashboard</h2>
+    <p class="page-subtitle">Jail administration overview</p>
+</div>
+
+@if (!Model.IsDatabaseAvailable)
+{
+    <div class="pmis-alert pmis-alert-danger" role="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+            <strong>Database connection unavailable:</strong> @(Model.DatabaseErrorMessage ?? "Unable to query SQL Server instance.")
+        </div>
+    </div>
+}
+
+<!-- Stat Cards (4 columns) -->
+<div class="stats-grid-4">
+    <!-- 1. Prisoners in custody -->
+    <div class="stat-card">
+        <div class="stat-icon-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="stat-body">
+            <span class="stat-label">Prisoners in custody</span>
+            <span class="stat-value">@(Model.PrisonersInCustody > 0 ? Model.PrisonersInCustody.ToString() : "—")</span>
+            <span class="stat-subtext">@(Model.PrisonersInCustody > 0 ? $"{Model.PrisonersInCustody} active records" : "No records yet")</span>
+        </div>
+    </div>
+
+    <!-- 2. Active staff -->
+    <div class="stat-card">
+        <div class="stat-icon-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="stat-body">
+            <span class="stat-label">Active staff</span>
+            <span class="stat-value">@(Model.ActiveStaff > 0 ? Model.ActiveStaff.ToString() : "—")</span>
+            <span class="stat-subtext">@(Model.ActiveStaff > 0 ? $"{Model.ActiveStaff} active staff" : "No records yet")</span>
+        </div>
+    </div>
+
+    <!-- 3. Hearings today -->
+    <div class="stat-card">
+        <div class="stat-icon-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="stat-body">
+            <span class="stat-label">Hearings today</span>
+            <span class="stat-value">@(Model.HearingsToday > 0 ? Model.HearingsToday.ToString() : "—")</span>
+            <span class="stat-subtext">@(Model.HearingsToday > 0 ? $"{Model.HearingsToday} scheduled today" : "No records yet")</span>
+        </div>
+    </div>
+
+    <!-- 4. Visitors inside -->
+    <div class="stat-card">
+        <div class="stat-icon-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="stat-body">
+            <span class="stat-label">Visitors inside</span>
+            <span class="stat-value">@(Model.VisitorsInside > 0 ? Model.VisitorsInside.ToString() : "—")</span>
+            <span class="stat-subtext">@(Model.VisitorsInside > 0 ? $"{Model.VisitorsInside} currently on premises" : "No records yet")</span>
+        </div>
+    </div>
+</div>
+
+<!-- 2x2 Content Section Cards -->
+<div class="dashboard-grid-2x2">
+    <!-- Card 1: Upcoming court hearings -->
+    <div class="pmis-card">
+        <div class="card-header-bar">
+            <div class="card-title-icon-group">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Upcoming court hearings</span>
+            </div>
+        </div>
+
+        @if (Model.UpcomingHearings.Count > 0)
+        {
+            <div class="pmis-table-wrapper">
+                <table class="pmis-table">
+                    <thead>
+                        <tr>
+                            <th>Prisoner</th>
+                            <th>Case</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var h in Model.UpcomingHearings)
+                        {
+                            <tr>
+                                <td>@h.PrisonerName</td>
+                                <td>@h.CaseReference</td>
+                                <td>@h.HearingDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@h.Status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-container">
+                <div class="empty-state-icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="empty-state-label">No hearings scheduled</div>
+            </div>
+        }
+    </div>
+
+    <!-- Card 2: Barracks & cells -->
+    <div class="pmis-card">
+        <div class="card-header-bar">
+            <div class="card-title-icon-group">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Barracks & cells</span>
+            </div>
+        </div>
+
+        @if (Model.BarracksAndCells.Count > 0)
+        {
+            <div class="pmis-table-wrapper">
+                <table class="pmis-table">
+                    <thead>
+                        <tr>
+                            <th>Barrack</th>
+                            <th>Category</th>
+                            <th>Cells</th>
+                            <th>Capacity</th>
+                            <th>Occupied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in Model.BarracksAndCells)
+                        {
+                            <tr>
+                                <td>@b.BarrackName</td>
+                                <td>@b.Category</td>
+                                <td>@b.TotalCells</td>
+                                <td>@b.TotalCapacity</td>
+                                <td>@b.OccupiedCount</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-container">
+                <div class="empty-state-icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </div>
+                <div class="empty-state-label">No accommodation records</div>
+            </div>
+        }
+    </div>
+
+    <!-- Card 3: Daily timetable -->
+    <div class="pmis-card">
+        <div class="card-header-bar">
+            <div class="card-title-icon-group">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Daily timetable</span>
+            </div>
+        </div>
+
+        @if (Model.DailyActivities.Count > 0)
+        {
+            <div class="pmis-table-wrapper">
+                <table class="pmis-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Activity</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.DailyActivities)
+                        {
+                            <tr>
+                                <td>@a.StartTime.ToString(@"hh\:mm") - @a.EndTime.ToString(@"hh\:mm")</td>
+                                <td>@a.ActivityName</td>
+                                <td>@a.Location</td>
+                                <td>@a.Status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-container">
+                <div class="empty-state-icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="empty-state-label">No activities scheduled</div>
+            </div>
+        }
+    </div>
+
+    <!-- Card 4: Gate activity -->
+    <div class="pmis-card">
+        <div class="card-header-bar">
+            <div class="card-title-icon-group">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                <span>Gate activity</span>
+            </div>
+        </div>
+
+        @if (Model.RecentGateActivity.Count > 0)
+        {
+            <div class="pmis-table-wrapper">
+                <table class="pmis-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var g in Model.RecentGateActivity)
+                        {
+                            <tr>
+                                <td>@g.Time.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@g.Type</td>
+                                <td>@g.Details</td>
+                                <td>@g.Status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-container">
+                <div class="empty-state-icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                </div>
+                <div class="empty-state-label">No entries recorded</div>
+            </div>
+        }
+    </div>
+</div>

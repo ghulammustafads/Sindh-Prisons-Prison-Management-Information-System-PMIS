@@ -1,0 +1,182 @@
+@model PrisonManagementSystem.ViewModels.GateRegisterViewModel
+@{
+    ViewData["Title"] = "Gate Register";
+    ViewData["ActivePage"] = "Gate Register";
+    Layout = "_AuthenticatedLayout";
+}
+
+<div class="page-title-block">
+    <h2 class="page-title">Gate Register</h2>
+    <p class="page-subtitle">Record visitor entry and exit</p>
+</div>
+
+<partial name="_Alerts" model="Model" />
+
+<div class="two-column-workspace">
+    <!-- Left: Entry list card -->
+    <div class="pmis-card">
+        <!-- Date filter bar -->
+        <form method="get" asp-action="Index" class="table-filter-bar">
+            <input type="hidden" name="tab" value="@Model.ActiveTab" />
+            <div class="filter-left-group">
+                <div class="date-range-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span>Date</span>
+                    <input type="date" name="fromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-input" style="width: 140px; padding: 6px 10px;" />
+                    <span>to</span>
+                    <input type="date" name="toDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-input" style="width: 140px; padding: 6px 10px;" />
+                    <button type="submit" class="btn-table-action">Filter</button>
+                    @if (Model.FromDate.HasValue || Model.ToDate.HasValue)
+                    {
+                        <a asp-action="Index" asp-route-tab="@Model.ActiveTab" class="btn-table-action" style="text-decoration:none;">Reset</a>
+                    }
+                </div>
+            </div>
+        </form>
+
+        <!-- Internal Tabs -->
+        <div class="internal-tab-bar">
+            <a asp-action="Index" asp-route-tab="all" asp-route-fromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))" asp-route-toDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))"
+               class="internal-tab-btn @(Model.ActiveTab == "all" ? "active" : "")">
+                All entries
+            </a>
+            <a asp-action="Index" asp-route-tab="inside" asp-route-fromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))" asp-route-toDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))"
+               class="internal-tab-btn @(Model.ActiveTab == "inside" ? "active" : "")">
+                Still inside
+            </a>
+        </div>
+
+        @if (Model.Entries.Count > 0)
+        {
+            <div class="pmis-table-wrapper">
+                <table class="pmis-table">
+                    <thead>
+                        <tr>
+                            <th>Visitor</th>
+                            <th>Visit type</th>
+                            <th>People</th>
+                            <th>Vehicle</th>
+                            <th>Entry</th>
+                            <th>Exit</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.Entries)
+                        {
+                            <tr>
+                                <td style="font-weight: 500;">
+                                    @entry.VisitorName
+                                    <div style="font-size: 11px; color: var(--pmis-navy-sub); font-weight: normal;">@entry.VisitPurpose</div>
+                                </td>
+                                <td>@entry.VisitType</td>
+                                <td>@entry.NumberOfPeople</td>
+                                <td>@(string.IsNullOrWhiteSpace(entry.VehicleDetails) ? "—" : entry.VehicleDetails)</td>
+                                <td>@entry.EntryTime.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (entry.ExitTime.HasValue)
+                                    {
+                                        <span>@entry.ExitTime.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: var(--pmis-green-primary); font-weight: 600;">Inside</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!entry.ExitTime.HasValue)
+                                    {
+                                        <form asp-action="RecordExit" method="post" onsubmit="return confirm('Record visitor departure at current time?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="entryId" value="@entry.EntryID" />
+                                            <input type="hidden" name="tab" value="@Model.ActiveTab" />
+                                            <input type="hidden" name="fromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" />
+                                            <input type="hidden" name="toDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" />
+                                            <button type="submit" class="btn-table-action btn-table-action-green">
+                                                Record exit
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span style="font-size: 12px; color: var(--pmis-navy-muted);">Departed</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-container">
+                <div class="empty-state-icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <div class="empty-state-label">No entries recorded</div>
+            </div>
+        }
+    </div>
+
+    <!-- Right: New entry form card -->
+    <div class="pmis-card">
+        <div class="card-header-bar">
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--pmis-navy);">New entry</h3>
+        </div>
+
+        <form asp-action="RecordEntry" method="post" autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ActiveTab" />
+            <input type="hidden" asp-for="FromDate" />
+            <input type="hidden" asp-for="ToDate" />
+
+            <div class="form-group">
+                <label asp-for="NewEntry.VisitorName" class="form-label">Visitor name</label>
+                <input asp-for="NewEntry.VisitorName" class="form-input" required />
+                <span asp-validation-for="NewEntry.VisitorName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewEntry.VisitType" class="form-label">Visit type</label>
+                <select asp-for="NewEntry.VisitType" class="form-select" required>
+                    <option value="">Select visit type</option>
+                    <option value="Family / Relative">Family / Relative</option>
+                    <option value="Legal / Advocate">Legal / Advocate</option>
+                    <option value="Official / Government">Official / Government</option>
+                    <option value="Vendor / Maintenance">Vendor / Maintenance</option>
+                    <option value="Judicial Inspection">Judicial Inspection</option>
+                    <option value="Medical Officer">Medical Officer</option>
+                </select>
+                <span asp-validation-for="NewEntry.VisitType" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewEntry.VisitPurpose" class="form-label">Visit purpose</label>
+                <textarea asp-for="NewEntry.VisitPurpose" class="form-textarea" required></textarea>
+                <span asp-validation-for="NewEntry.VisitPurpose" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewEntry.VehicleDetails" class="form-label">Vehicle details <span class="optional">(optional)</span></label>
+                <input asp-for="NewEntry.VehicleDetails" class="form-input" placeholder="e.g. ABC-1234 (Toyota Corolla)" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewEntry.NumberOfPeople" class="form-label">Number of people</label>
+                <input asp-for="NewEntry.NumberOfPeople" type="number" min="1" max="100" class="form-input" required />
+                <span asp-validation-for="NewEntry.NumberOfPeople" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewEntry.EntryTime" class="form-label">Entry time</label>
+                <input asp-for="NewEntry.EntryTime" type="datetime-local" class="form-input" required />
+                <span asp-validation-for="NewEntry.EntryTime" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-green-submit">
+                Save entry
+            </button>
+        </form>
+    </div>
+</div>

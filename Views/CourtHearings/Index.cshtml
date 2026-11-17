@@ -1,0 +1,197 @@
+@model PrisonManagementSystem.ViewModels.CourtHearingsViewModel
+@{
+    ViewData["Title"] = "Court Hearings";
+    ViewData["ActivePage"] = "Court Hearings";
+    Layout = "_AuthenticatedLayout";
+}
+
+<div class="page-title-block">
+    <h2 class="page-title">Court Hearings</h2>
+    <p class="page-subtitle">Schedule hearings and record outcomes.</p>
+</div>
+
+<partial name="_Alerts" model="Model" />
+
+<div class="two-column-workspace">
+    <!-- Left: Hearings list -->
+    <div class="pmis-card">
+        <!-- Search and Date Filter Bar -->
+        <form method="get" asp-action="Index" class="table-filter-bar">
+            <div class="filter-left-group">
+                <div class="search-input-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" name="search" value="@Model.SearchCase" class="form-input" placeholder="Search case" />
+                </div>
+                <input type="date" name="date" value="@(Model.DateFilter?.ToString("yyyy-MM-dd"))" class="form-input" style="width: 160px;" onchange="this.form.submit()" />
+                <button type="submit" class="btn-table-action">Filter</button>
+                @if (!string.IsNullOrEmpty(Model.SearchCase) || Model.DateFilter.HasValue)
+                {
+                    <a asp-action="Index" class="btn-table-action" style="text-decoration:none;">Reset</a>
+                }
+            </div>
+
+            <a href="#scheduleHearingCard" class="btn-green-action">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Schedule hearing</span>
+            </a>
+        </form>
+
+        @if (Model.Hearings.Count > 0)
+        {
+            <div class="pmis-table-wrapper">
+                <table class="pmis-table">
+                    <thead>
+                        <tr>
+                            <th>Prisoner</th>
+                            <th>Case reference</th>
+                            <th>Hearing date</th>
+                            <th>Type</th>
+                            <th>Attendance</th>
+                            <th>Outcome</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var h in Model.Hearings)
+                        {
+                            <tr>
+                                <td style="font-weight: 500;">@h.PrisonerName</td>
+                                <td>@h.CaseReference</td>
+                                <td>@h.HearingDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@h.HearingType</td>
+                                <td>@h.AttendanceStatus</td>
+                                <td>@(string.IsNullOrWhiteSpace(h.Outcome) ? "Pending" : h.Outcome)</td>
+                                <td>
+                                    <!-- Record outcome modal / inline form trigger -->
+                                    <details style="position: relative;">
+                                        <summary class="btn-table-action" style="list-style:none; cursor:pointer;">Update</summary>
+                                        <div style="position: absolute; right: 0; z-index: 20; background: white; border: 1px solid var(--pmis-border); border-radius: 8px; padding: 16px; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: 4px;">
+                                            <form asp-action="RecordOutcome" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="TrialID" value="@h.TrialID" />
+                                                <input type="hidden" name="search" value="@Model.SearchCase" />
+                                                <input type="hidden" name="date" value="@(Model.DateFilter?.ToString("yyyy-MM-dd"))" />
+                                                @if (h.RowVersion != null)
+                                                {
+                                                    <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(h.RowVersion)" />
+                                                }
+                                                <div class="form-group">
+                                                    <label class="form-label">Attendance</label>
+                                                    <select name="AttendanceStatus" class="form-select">
+                                                        <option value="Attended in Person">Attended in Person</option>
+                                                        <option value="Video Link">Video Link</option>
+                                                        <option value="Not Produced">Not Produced</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="form-label">Hearing Status</label>
+                                                    <select name="HearingStatus" class="form-select">
+                                                        <option value="Completed">Completed</option>
+                                                        <option value="Adjourned">Adjourned</option>
+                                                        <option value="Cancelled">Cancelled</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="form-label">Outcome</label>
+                                                    <input type="text" name="Outcome" class="form-input" placeholder="e.g. Adjourned to next month / Bail granted" />
+                                                </div>
+                                                <button type="submit" class="btn-green-submit" style="padding: 6px 12px; font-size: 13px;">Save Outcome</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-container">
+                <div class="empty-state-icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="empty-state-label">No hearings scheduled</div>
+            </div>
+        }
+
+        <div class="pmis-info-note">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Case records are managed from the prisoner profile.</span>
+        </div>
+    </div>
+
+    <!-- Right: Schedule hearing form card -->
+    <div class="pmis-card" id="scheduleHearingCard">
+        <div class="card-header-bar">
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--pmis-navy);">Schedule hearing</h3>
+        </div>
+
+        <form asp-action="Schedule" method="post" autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="SearchCase" />
+            <input type="hidden" asp-for="DateFilter" />
+
+            <div class="form-group">
+                <label asp-for="ScheduleForm.CaseID" class="form-label">Prisoner case</label>
+                <select asp-for="ScheduleForm.CaseID" class="form-select" required>
+                    <option value="">Search and select prisoner case</option>
+                    @foreach (var c in Model.AvailableCases)
+                    {
+                        <option value="@c.CaseID">@c.DisplayText</option>
+                    }
+                </select>
+                <span asp-validation-for="ScheduleForm.CaseID" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ScheduleForm.HearingDate" class="form-label">Hearing date</label>
+                <input asp-for="ScheduleForm.HearingDate" type="date" class="form-input" required />
+                <span asp-validation-for="ScheduleForm.HearingDate" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ScheduleForm.HearingTime" class="form-label">Hearing time</label>
+                <input asp-for="ScheduleForm.HearingTime" type="time" class="form-input" required />
+                <span asp-validation-for="ScheduleForm.HearingTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ScheduleForm.HearingType" class="form-label">Hearing type</label>
+                <select asp-for="ScheduleForm.HearingType" class="form-select" required>
+                    <option value="Bail Hearing">Bail Hearing</option>
+                    <option value="Regular Trial Hearing">Regular Trial Hearing</option>
+                    <option value="Framing of Charges">Framing of Charges</option>
+                    <option value="Prosecution Evidence">Prosecution Evidence</option>
+                    <option value="Defense Evidence">Defense Evidence</option>
+                    <option value="Final Arguments">Final Arguments</option>
+                    <option value="Judgment / Sentencing">Judgment / Sentencing</option>
+                    <option value="Remand Hearing">Remand Hearing</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ScheduleForm.ResponsibleStaffID" class="form-label">Responsible staff</label>
+                <select asp-for="ScheduleForm.ResponsibleStaffID" class="form-select" required>
+                    <option value="">Search and select staff</option>
+                    @foreach (var s in Model.AvailableStaff)
+                    {
+                        <option value="@s.StaffID">@s.FullName (@s.OfficialRank)</option>
+                    }
+                </select>
+                <span asp-validation-for="ScheduleForm.ResponsibleStaffID" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ScheduleForm.Remarks" class="form-label">Remarks</label>
+                <textarea asp-for="ScheduleForm.Remarks" class="form-textarea" placeholder="Court courtroom, presiding judge, escort instructions"></textarea>
+            </div>
+
+            <button type="submit" class="btn-green-submit">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span>Save hearing</span>
+            </button>
+        </form>
+    </div>
+</div>

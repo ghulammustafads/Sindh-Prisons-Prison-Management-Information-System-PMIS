@@ -1,0 +1,338 @@
+@model PrisonManagementSystem.ViewModels.PrisonersViewModel
+@{
+    ViewData["Title"] = "Prisoners";
+    ViewData["ActivePage"] = "Prisoners";
+    Layout = "_AuthenticatedLayout";
+}
+
+<div class="page-title-block">
+    <h2 class="page-title">Prisoners</h2>
+    <p class="page-subtitle">Manage prisoner records and accommodation</p>
+</div>
+
+<partial name="_Alerts" model="Model" />
+
+<div class="two-column-workspace">
+    <!-- Left: Prisoner records and cases & hearings tabs -->
+    <div class="pmis-card">
+        <!-- Search and Status Bar -->
+        <form method="get" asp-action="Index" class="table-filter-bar">
+            <input type="hidden" name="tab" value="@Model.ActiveTab" />
+            <div class="filter-left-group">
+                <div class="search-input-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" name="search" value="@Model.SearchTerm" class="form-input" placeholder="Search prisoners" />
+                </div>
+                <select name="status" class="form-select" style="width: 150px;" onchange="this.form.submit()">
+                    <option value="All statuses" selected="@(Model.StatusFilter == "All statuses")">All statuses</option>
+                    <option value="In Custody" selected="@(Model.StatusFilter == "In Custody")">In Custody</option>
+                    <option value="Transferred" selected="@(Model.StatusFilter == "Transferred")">Transferred</option>
+                    <option value="Released" selected="@(Model.StatusFilter == "Released")">Released</option>
+                </select>
+                <button type="submit" class="btn-table-action">Filter</button>
+            </div>
+
+            <a href="#registerPrisonerCard" class="btn-green-action">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Add prisoner</span>
+            </a>
+        </form>
+
+        <!-- Internal Tabs -->
+        <div class="internal-tab-bar">
+            <a asp-action="Index" asp-route-tab="records" asp-route-search="@Model.SearchTerm" asp-route-status="@Model.StatusFilter" asp-route-selectedPrisonerId="@(Model.SelectedPrisoner?.PrisonerID)"
+               class="internal-tab-btn @(Model.ActiveTab == "records" ? "active" : "")">
+                Prisoner records
+            </a>
+            <a asp-action="Index" asp-route-tab="cases" asp-route-search="@Model.SearchTerm" asp-route-status="@Model.StatusFilter" asp-route-selectedPrisonerId="@(Model.SelectedPrisoner?.PrisonerID)"
+               class="internal-tab-btn @(Model.ActiveTab == "cases" ? "active" : "")">
+                Cases & hearings
+            </a>
+        </div>
+
+        @if (Model.ActiveTab == "records")
+        {
+            @if (Model.Prisoners.Count > 0)
+            {
+                <div class="pmis-table-wrapper">
+                    <table class="pmis-table">
+                        <thead>
+                            <tr>
+                                <th>Prisoner no.</th>
+                                <th>Name</th>
+                                <th>Admission date</th>
+                                <th>Barrack / cell</th>
+                                <th>Custody status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Prisoners)
+                            {
+                                <tr>
+                                    <td style="font-weight: 600; font-family: monospace;">@p.PrisonerNumber</td>
+                                    <td>@p.FullName</td>
+                                    <td>@p.AdmissionDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@p.BarrackCellLocation</td>
+                                    <td>
+                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #eaf5ee; color: #0a5435;">
+                                            @p.CustodyStatus
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a asp-action="Index" asp-route-tab="cases" asp-route-selectedPrisonerId="@p.PrisonerID" class="btn-table-action">
+                                            Cases & hearings
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-container">
+                    <div class="empty-state-icon-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div class="empty-state-label">No prisoners registered</div>
+                </div>
+            }
+        }
+        else
+        {
+            <!-- Cases & hearings tab content -->
+            @if (Model.SelectedPrisoner != null)
+            {
+                <div style="background: #f8fafc; border: 1px solid var(--pmis-border); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--pmis-navy);">
+                                @Model.SelectedPrisoner.FullName
+                                <span style="font-size: 13px; font-weight: normal; color: var(--pmis-navy-sub); margin-left: 8px;">(@Model.SelectedPrisoner.PrisonerNumber)</span>
+                            </h3>
+                            <p style="font-size: 12px; color: var(--pmis-navy-sub); margin-top: 4px;">
+                                Father: @Model.SelectedPrisoner.FatherName | Status: @Model.SelectedPrisoner.CustodyStatus | Cell: @(Model.SelectedPrisoner.CellNumber ?? "Unassigned")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 15px; font-weight: 600; color: var(--pmis-navy); margin-bottom: 12px;">Court Cases</h4>
+                @if (Model.SelectedPrisoner.Cases.Count > 0)
+                {
+                    @foreach (var c in Model.SelectedPrisoner.Cases)
+                    {
+                        <div style="border: 1px solid var(--pmis-border); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <h5 style="font-size: 14px; font-weight: 700; color: var(--pmis-navy);">Case #@c.CaseNumber (@c.CaseYear)</h5>
+                                    <p style="font-size: 12px; color: var(--pmis-navy-sub); margin-top: 2px;">
+                                        Court: @c.CourtName | FIR: @c.FIRNumber | Police Station: @c.PoliceStation
+                                    </p>
+                                    <p style="font-size: 12px; color: var(--pmis-navy); margin-top: 4px;">
+                                        <strong>Offence:</strong> @c.AllegedOffence
+                                    </p>
+                                </div>
+                                <span style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #e0f2fe; color: #0369a1;">
+                                    @c.CaseStatus
+                                </span>
+                            </div>
+
+                            @if (c.LinkedHearings.Count > 0)
+                            {
+                                <div style="margin-top: 12px; border-top: 1px solid var(--pmis-border-light); padding-top: 8px;">
+                                    <h6 style="font-size: 12px; font-weight: 600; color: var(--pmis-navy); margin-bottom: 6px;">Hearing History</h6>
+                                    <table class="pmis-table" style="font-size: 12px;">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                                <th>Attendance</th>
+                                                <th>Outcome</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var h in c.LinkedHearings)
+                                            {
+                                                <tr>
+                                                    <td>@h.HearingDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                                    <td>@h.HearingType</td>
+                                                    <td>@h.AttendanceStatus</td>
+                                                    <td>@(h.Outcome ?? "Pending")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p style="font-size: 13px; color: var(--pmis-navy-muted); margin-bottom: 20px;">No court cases recorded for this prisoner.</p>
+                }
+
+                <!-- Add Court Case Form for this prisoner -->
+                <div style="background: #fafbfc; border: 1px dashed var(--pmis-border); border-radius: 8px; padding: 16px; margin-top: 20px;">
+                    <h5 style="font-size: 14px; font-weight: 700; color: var(--pmis-navy); margin-bottom: 12px;">Add Court Case for @Model.SelectedPrisoner.FullName</h5>
+                    <form asp-action="AddCase" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="NewCaseForm.PrisonerID" value="@Model.SelectedPrisoner.PrisonerID" />
+
+                        <div class="form-row-2col form-group">
+                            <div>
+                                <label class="form-label">Case number</label>
+                                <input type="text" name="NewCaseForm.CaseNumber" class="form-input" required />
+                            </div>
+                            <div>
+                                <label class="form-label">Case year</label>
+                                <input type="number" name="NewCaseForm.CaseYear" value="@DateTime.Now.Year" class="form-input" required />
+                            </div>
+                        </div>
+
+                        <div class="form-row-2col form-group">
+                            <div>
+                                <label class="form-label">Court name</label>
+                                <input type="text" name="NewCaseForm.CourtName" class="form-input" placeholder="e.g. District & Sessions Court, Karachi" required />
+                            </div>
+                            <div>
+                                <label class="form-label">Case type</label>
+                                <input type="text" name="NewCaseForm.CaseType" value="Criminal" class="form-input" required />
+                            </div>
+                        </div>
+
+                        <div class="form-row-2col form-group">
+                            <div>
+                                <label class="form-label">FIR number</label>
+                                <input type="text" name="NewCaseForm.FIRNumber" class="form-input" required />
+                            </div>
+                            <div>
+                                <label class="form-label">Police station</label>
+                                <input type="text" name="NewCaseForm.PoliceStation" class="form-input" required />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Alleged offence</label>
+                            <input type="text" name="NewCaseForm.AllegedOffence" class="form-input" placeholder="e.g. Section 302/34 PPC" required />
+                        </div>
+
+                        <div class="form-row-2col form-group">
+                            <div>
+                                <label class="form-label">Lawyer name <span class="optional">(optional)</span></label>
+                                <input type="text" name="NewCaseForm.LawyerName" class="form-input" />
+                            </div>
+                            <div>
+                                <label class="form-label">Responsible staff</label>
+                                <select name="NewCaseForm.ResponsibleStaffID" class="form-select" required>
+                                    <option value="">Select staff</option>
+                                    @foreach (var s in Model.AvailableStaff)
+                                    {
+                                        <option value="@s.StaffID">@s.FullName (@s.OfficialRank)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-green-submit" style="padding: 8px 16px; font-size: 13px;">Save Case</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-container">
+                    <p class="empty-state-label">Select a prisoner from Prisoner Records to view or manage cases and hearings.</p>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Right: Register prisoner card -->
+    <div class="pmis-card" id="registerPrisonerCard">
+        <div class="card-header-bar">
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--pmis-navy);">Register prisoner</h3>
+        </div>
+
+        <form asp-action="Register" method="post" autocomplete="off">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="RegisterForm.PrisonerID" />
+            <input type="hidden" asp-for="ActiveTab" />
+            <input type="hidden" asp-for="SearchTerm" />
+            <input type="hidden" asp-for="StatusFilter" />
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.FullName" class="form-label">Full name</label>
+                <input asp-for="RegisterForm.FullName" class="form-input" required />
+                <span asp-validation-for="RegisterForm.FullName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.FatherName" class="form-label">Father name</label>
+                <input asp-for="RegisterForm.FatherName" class="form-input" required />
+                <span asp-validation-for="RegisterForm.FatherName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.DateOfBirth" class="form-label">Date of birth</label>
+                <input asp-for="RegisterForm.DateOfBirth" type="date" class="form-input" required />
+                <span asp-validation-for="RegisterForm.DateOfBirth" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.Gender" class="form-label">Gender</label>
+                <select asp-for="RegisterForm.Gender" class="form-select" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Juvenile">Juvenile</option>
+                </select>
+                <span asp-validation-for="RegisterForm.Gender" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.CNIC" class="form-label">Identification <span class="optional">(optional)</span></label>
+                <input asp-for="RegisterForm.CNIC" class="form-input" placeholder="CNIC: 42101-XXXXXXX-X" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.AdmissionDate" class="form-label">Admission date</label>
+                <input asp-for="RegisterForm.AdmissionDate" type="date" class="form-input" required />
+                <span asp-validation-for="RegisterForm.AdmissionDate" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.BarrackID" class="form-label">Barrack</label>
+                <select asp-for="RegisterForm.BarrackID" id="prisonerBarrackSelect" class="form-select">
+                    <option value="">Select barrack</option>
+                    @foreach (var b in Model.AvailableBarracks)
+                    {
+                        <option value="@b.BarrackID">@b.BarrackName (@b.Category)</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.CellID" class="form-label">Cell</label>
+                <select asp-for="RegisterForm.CellID" id="prisonerCellSelect" class="form-select">
+                    <option value="">Select cell</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.EmergencyContact" class="form-label">Emergency contact</label>
+                <input asp-for="RegisterForm.EmergencyContact" class="form-input" placeholder="Name" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="RegisterForm.EmergencyContactPhone" class="form-label">Emergency contact phone</label>
+                <input asp-for="RegisterForm.EmergencyContactPhone" class="form-input" placeholder="Phone number" />
+            </div>
+
+            <button type="submit" class="btn-green-submit">
+                Save prisoner
+            </button>
+        </form>
+    </div>
+</div>
